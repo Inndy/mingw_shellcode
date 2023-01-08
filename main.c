@@ -2,11 +2,6 @@
 #include <windows.h>
 #include <winternl.h>
 
-typedef struct {
-	PVOID Reserved1[12];
-	PPEB  ProcessEnvironmentBlock;
-} __TEB;
-
 #define ENCODE_PTR(X) (((DWORD_PTR)(X)) - (DWORD_PTR)0xe8c7b756d76aa478)
 #define DECODE_PTR(X) (LPVOID)(((DWORD_PTR)(X)) + (DWORD_PTR)0xe8c7b756d76aa478)
 #define DECODE_INTPTR(X) (DWORD_PTR)DECODE_PTR(X)
@@ -100,7 +95,7 @@ void start()
 {
 	DWORD_PTR kernel32;
 
-	LIST_ENTRY *root = &((__TEB*)NtCurrentTeb())->ProcessEnvironmentBlock->Ldr->InMemoryOrderModuleList;
+	LIST_ENTRY *root = &((TEB*)NtCurrentTeb())->ProcessEnvironmentBlock->Ldr->InMemoryOrderModuleList;
 	LDR_DATA_TABLE_ENTRY *entry = CONTAINING_RECORD(root, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
 	while(entry = CONTAINING_RECORD(entry->InMemoryOrderLinks.Flink, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks), &entry->InMemoryOrderLinks != root) {
 		LPCWSTR dll_base_name = (1 + &entry->FullDllName)->Buffer;

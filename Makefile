@@ -35,8 +35,14 @@ main32.obj: main32.S
 main32.exe: main32.obj
 	i686-w64-mingw32-ld $^ -nostdlib -e_start -o $@
 
-main32.bin: main32.obj
+main32_text.bin: main32.obj
 	i686-w64-mingw32-objcopy -O binary -j.text $^ $@
+
+main32_reloc.bin: main32.exe
+	i686-w64-mingw32-objcopy -O binary -j.reloc $^ $@
+
+main32.bin: main32_text.bin main32_reloc.bin
+	cat $^ > $@
 
 execute_shellcode64.exe: execute_shellcode.c
 	x86_64-w64-mingw32-gcc execute_shellcode.c -eWinMain -nostdlib -lkernel32 -lmsvcrt -lshell32 -o execute_shellcode64.exe

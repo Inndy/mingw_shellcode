@@ -90,6 +90,28 @@ DWORD_PTR _get_proc(DWORD_PTR base, LPCSTR fname)
 }
 #endif
 
+void fix_reloc(intptr_t sc, intptr_t orig_base, char *reloc) {
+	for (;;) {
+		int size = *(DWORD*)(reloc+4);
+		if (size == 0) break;
+		int count = (size - 8) / 2;
+
+		intptr_t offset = -orig_base + *(DWORD*)reloc;
+		intptr_t fix_base = sc + *(DWORD*)reloc;
+		unsigned short *p = (unsigned short *)(reloc + 8);
+		for(int i = 0; i < count; i++) {
+			switch (p[i] >> 12) {
+				case 0:
+					goto next;
+
+				case 3:
+					*(DWORD*)(fix_base + (0xfff & p[i])) += offset;
+			}
+		}
+next:
+		reloc += size;
+	}
+}
 
 void start()
 {
@@ -114,9 +136,7 @@ void start()
 	char str_messagebox_a[] = "MessageBoxA";
 	GET_PROC(pMessageBoxA, user32, str_messagebox_a);
 
-	CHAR text[] = "Hello, World!";
-	CHAR title[] = "Hello";
-	pMessageBoxA(NULL, text, title, MB_ICONINFORMATION | MB_SETFOREGROUND);
+	pMessageBoxA(NULL, "Hello", "World", MB_ICONINFORMATION | MB_SETFOREGROUND);
 
 	DWORD WINAPI (*pExitProcess)(DWORD);
 	char str_exit_process[] = "ExitProcess";
